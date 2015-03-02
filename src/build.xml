@@ -1,0 +1,87 @@
+<project name="xPath" basedir="." default="main">
+	<property name="src.dir" value="src" />
+	<property name="build.dir" value="build" />
+	<property name="classes.dir" value="${build.dir}/classes"/>
+	<property name="classes.test.dir" value="${classes.dir}/tests" />
+	<property name="jar.dir" value="${build.dir}/jar" />
+	<property name="main-class" value="main.MainController" />
+	<property name="src.test.dir" value="tests" />
+	<property name="lib.dir" value="lib" />
+			
+	<path id="classpath" >
+		<fileset dir="${lib.dir}" includes="**/*.jar" />
+	</path>
+	
+    <target name="clean">
+		<echo> deleting ${build.dir} </echo>
+        <delete dir="${build.dir}"/>
+    </target>
+	
+	<target name="compiletest">
+		<mkdir dir="${classes.dir}" />
+		<copy todir="${src.dir}">
+			<fileset dir="${src.test.dir}" />
+		</copy>
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" includeantruntime="true"/>
+		<copy todir="${classes.dir}" >
+			<fileset dir="${src.dir}" excludes="**/*.java" />
+		</copy>
+		
+		
+	</target>
+	
+	<target name="compile">
+        <mkdir dir="${classes.dir}" />
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" includeantruntime="true"/>
+		<copy todir="${classes.dir}" >
+			<fileset dir="${src.dir}" excludes="**/*.java" />
+		</copy>
+    </target>
+	
+	<target name="jarwithtest" depends="compiletest" />
+
+    <target name="jar" depends="compile">
+        <mkdir dir="${jar.dir}"/>
+		<tstamp>
+			<format property="timestamp" pattern="dd-MM-yyyy HH:mm:ss" />
+		</tstamp>
+        <manifest file="MANIFEST.MF">
+           <attribute name="Main-Class" value="${main-class}"/>
+		   <attribute name="Build-date" value="${timestamp}" />
+		   <attribute name="Java-version" value="${ant.java.version}" />
+        </manifest>
+		
+		 <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}" manifest="MANIFEST.MF" />
+        
+    </target>
+
+    <target name="run" depends="jar">
+        <java classname="${main-class}" fork="true">
+			<classpath>
+				<path refid="classpath" />
+				<path id="application" location="${jar.dir}/${ant.project.name}.jar" />
+				</classpath>
+		</java>
+    </target>
+	
+	<target name="test" depends="compiletest">
+		<junit printsummary="withOutAndErr">
+			<classpath>
+				<path refid="classpath"/>
+				<path location="${classes.dir}" />
+			</classpath>
+			<formatter type="plain" usefile="false" />
+
+			<batchtest fork="yes">
+				<fileset dir="${src.dir}" includes="**/*Test.java" />
+			</batchtest>
+		</junit>
+		
+	</target>
+	
+	
+	<target name="clean-build" depends="clean,jar" />
+	
+	<target name="main" depends="clean,run" />
+
+</project>
